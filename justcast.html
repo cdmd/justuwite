@@ -1,0 +1,45 @@
+---
+layout: justcastlayout
+---
+<article class='post-content'>
+<div class='text-center'>
+    <h2>Shut up and Cast!</h2>
+    <div class="row">
+        <button type='button' class='btn btn-primary' id='castme'>Cast</button>
+        <button type='button' class='btn btn-primary' id='stop'>Stop</button>
+    </div>
+
+    <div class="row">
+        <p id="hoverTime"><br></p>
+    </div>
+    <br>
+
+    <div class="row">
+        <div class="col-md-1 col-md-offset-2">
+            <i id="play" class="fa fa-play fa-2x hidden"></i>
+            <i id="pause" class="fa fa-pause fa-2x"></i>
+        </div>
+        <div id="progress" class="progress col-md-6" style="height: 30px;">
+            <div id ="progressBar" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style= "width: 0%;">
+            </div>
+        </div>
+        <div class="col-md-1">
+            <i class="fa fa-volume-up fa-2x"></i>
+        </div>
+        </div> <!-- end progress -->
+
+        <div class="row">
+            <div id="timeleft" class="text-center"></div>
+        </div>
+</div>
+</article>
+
+<script src="js\script.js" type="text/JAVASCRIPT"></script>
+<script type="text/javascript">
+var justCastPlayer = new JustCast();
+</script>
+<script language="javascript">
+var text = window.location.search;
+var videoLink = decodeURIComponent(text.substring(text.indexOf("=")+1, text.length));
+</script>
+
