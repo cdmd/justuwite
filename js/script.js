@@ -105,6 +105,7 @@ function playSuccess()
   $('#pause').removeClass("hidden");
   var tt = currentMediaSession.media.duration;
   increment = (1/tt)*100;
+  updateProgressBar();
 }
 
 function launchApp() 
@@ -161,6 +162,8 @@ function onLoadSuccess(mediaSession) {
 
 function updateProgressBar()
 {
+  if(increment == 0)
+    return;
   document.getElementById('progressBar').style.width= (progress) +'%';
   var timeLeftInSecs = progress/increment;
   var hours = Math.floor(timeLeftInSecs / 3600);
@@ -191,9 +194,9 @@ function onMediaStatusUpdate(e)
   }
   else
   {
-    console.log("Updating Media");
-    progress = (currentMediaSession.currentTime / currentMediaSession.media.duration);
-    console.log(currentMediaSession.currentTime, currentMediaSession.media.duration);
+    progress = (currentMediaSession.currentTime / currentMediaSession.media.duration)*100;
+    console.log("Updating Media", currentMediaSession.currentTime, currentMediaSession.media.duration);
+    //updateProgressBar();
   }
 }
 
