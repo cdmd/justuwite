@@ -5,8 +5,8 @@ var currentMediaSession;
 
 $( document ).ready(function(){
   document.getElementById("progress").addEventListener('mouseup', seekMedia);
-  document.getElementById("progress").addEventListener('mouseenter', showTime);
-  document.getElementById("progress").addEventListener('mouseleave', hideTime);
+  document.getElementById("progress").addEventListener('mousemove', showTime);
+  document.getElementById("progress").addEventListener('mouseout', hideTime);
   var loadCastInterval = setInterval(function(){
     if (chrome.cast.isAvailable) 
     {
@@ -231,9 +231,12 @@ function seekMedia(event)
 
 function showTime(event)
 {
+  var x, y;
+  if(event.offsetX == x && event.offsetY == y) {
+    return;
+  }
   var pos = parseInt(event.offsetX);
   var total = document.getElementById("progress").clientWidth;
-  console.log(pos/total);
   var timeLeftInSecs = (pos/total)*currentMediaSession.media.duration;
   var hours = Math.floor(timeLeftInSecs / 3600);
   var minutes = Math.floor(timeLeftInSecs / 60);
@@ -246,7 +249,7 @@ function showTime(event)
 
 function hideTime(event)
 {
-  document.getElementById('hoverTime').innerHTML = '00:00:00.000';
+  document.getElementById('hoverTime').innerHTML = '';
 }
 
 function onSeekSuccess(currTime)
