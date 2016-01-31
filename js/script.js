@@ -249,7 +249,7 @@ function showTime(event)
 
 function hideTime(event)
 {
-  document.getElementById('hoverTime').innerHTML = '';
+  document.getElementById('hoverTime').innerHTML = '<br/>';
 }
 
 function onSeekSuccess(currTime)
