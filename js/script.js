@@ -103,7 +103,7 @@ function playSuccess()
   console.log("Play Success");
   $('#play').addClass("hidden");
   $('#pause').removeClass("hidden");
-  var tt = mediaSession.media.duration;
+  var tt = currentMediaSession.media.duration;
   increment = (1/tt)*100;
 }
 
@@ -150,8 +150,8 @@ function loadMedia()
 
 function onLoadSuccess(mediaSession) {
   console.log('Successfully loaded.');
-  playSuccess();
   currentMediaSession = mediaSession;
+  playSuccess();
   mediaSession.addUpdateListener(onMediaStatusUpdate);
   var tt = mediaSession.media.duration;
   increment = (1/tt)*100;
