@@ -4,9 +4,9 @@ var progress = 0;
 var currentMediaSession;
 
 $( document ).ready(function(){
-  document.getElementById("progress").addEventListener('mouseup', seekMedia);
-  document.getElementById("progress").addEventListener('mousemove', showTime);
-  document.getElementById("progress").addEventListener('mouseout', hideTime);
+  document.getElementById("progressBar").addEventListener('mouseup', seekMedia);
+  document.getElementById("progressBar").addEventListener('mousemove', showTime);
+  document.getElementById("progressBar").addEventListener('mouseout', hideTime);
   var loadCastInterval = setInterval(function(){
     if (chrome.cast.isAvailable) 
     {
