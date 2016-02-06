@@ -2,9 +2,12 @@ var session = null;
 var increment = 0;
 var progress = 0;
 var currentMediaSession;
+var timer = null;
 
 $( document ).ready(function(){
   document.getElementById("progress").addEventListener('mouseup', seekMedia);
+  document.getElementById("progress").addEventListener('mousemove', showTime);
+  document.getElementById("progress").addEventListener('mouseout', hideTime);
   var loadCastInterval = setInterval(function(){
     if (chrome.cast.isAvailable) 
     {
@@ -65,6 +68,7 @@ $('#castme').click(function()
   launchApp();
 });
 
+
 $('#pause').click(function()
 {
   if(!session || !currentMediaSession) {
@@ -79,12 +83,16 @@ function pauseSuccess()
   console.log("Pause Success");
   $('#pause').addClass("hidden");
   $('#play').removeClass("hidden");
+  if(timer)
+    clearInterval(timer);
+  increment = 0;
 }
 
 function playPauseFailure()
 {
   console.log("Pause Failure");
 }
+
 
 $('#play').click(function()
 {
@@ -100,6 +108,11 @@ function playSuccess()
   console.log("Play Success");
   $('#play').addClass("hidden");
   $('#pause').removeClass("hidden");
+  var tt = currentMediaSession.media.duration;
+  increment = (1/tt)*100;
+  if(timer)
+    clearInterval(timer);
+  updateProgressBar();
 }
 
 function launchApp() 
@@ -146,6 +159,7 @@ function loadMedia()
 function onLoadSuccess(mediaSession) {
   console.log('Successfully loaded.');
   currentMediaSession = mediaSession;
+  playSuccess();
   mediaSession.addUpdateListener(onMediaStatusUpdate);
   var tt = mediaSession.media.duration;
   increment = (1/tt)*100;
@@ -155,6 +169,8 @@ function onLoadSuccess(mediaSession) {
 
 function updateProgressBar()
 {
+  if(increment === 0)
+    return;
   document.getElementById('progressBar').style.width= (progress) +'%';
   var timeLeftInSecs = progress/increment;
   var hours = Math.floor(timeLeftInSecs / 3600);
@@ -171,7 +187,7 @@ function updateProgressBar()
   if(progress < 100 && increment !== 0)
   {
     progress = progress + increment;
-    setTimeout(updateProgressBar,1000);
+    timer = setTimeout(updateProgressBar.bind(this),1000);
   }
 }
 
@@ -185,9 +201,9 @@ function onMediaStatusUpdate(e)
   }
   else
   {
-    console.log("Updating Media");
-    progress = (currentMediaSession.currentTime / currentMediaSession.media.duration);
-    console.log(currentMediaSession.currentTime, currentMediaSession.media.duration);
+    progress = (currentMediaSession.currentTime / currentMediaSession.media.duration)*100;
+    console.log("Updating Media", currentMediaSession.currentTime, currentMediaSession.media.duration);
+    //updateProgressBar();
   }
 }
 
@@ -203,6 +219,9 @@ function stopApp() {
   session.stop(onStopAppSuccess, onStopAppError);
   progress = 0;
   increment = 0;
+  if(timer)
+    clearInterval(timer);
+  document.getElementById('timeleft').innerHTML = '<br/>';
 }
 
 function onStopAppSuccess() {
@@ -221,6 +240,29 @@ function seekMedia(event)
   var request = new chrome.cast.media.SeekRequest();
   request.currentTime = (pos/total)*currentMediaSession.media.duration;
   currentMediaSession.seek(request, onSeekSuccess(request.currentTime), onSeekError);
+}
+
+function showTime(event)
+{
+  var x, y;
+  if(event.offsetX == x && event.offsetY == y) {
+    return;
+  }
+  var pos = parseInt(event.offsetX);
+  var total = document.getElementById("progress").clientWidth;
+  var timeLeftInSecs = (pos/total)*currentMediaSession.media.duration;
+  var hours = Math.floor(timeLeftInSecs / 3600);
+  var minutes = Math.floor(timeLeftInSecs / 60);
+  var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
+  if(!isNaN(timeLeftInSecs))
+  {
+    document.getElementById('hoverTime').innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes<10) ? ('0' + minutes) : minutes) + ':' + ((seconds<10) ? ('0'+seconds.toFixed(3)) : seconds.toFixed(3));
+  }
+}
+
+function hideTime(event)
+{
+  document.getElementById('hoverTime').innerHTML = '<br/>';
 }
 
 function onSeekSuccess(currTime)
