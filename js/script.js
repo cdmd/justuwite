@@ -2,19 +2,20 @@ var session = null;
 var increment = 0;
 var progress = 0;
 var currentMediaSession;
+var timer = null;
 
 $( document ).ready(function(){
   document.getElementById("progress").addEventListener('mouseup', seekMedia);
   document.getElementById("progress").addEventListener('mousemove', showTime);
   document.getElementById("progress").addEventListener('mouseout', hideTime);
   var loadCastInterval = setInterval(function(){
-    if (chrome.cast.isAvailable) 
+    if (chrome.cast.isAvailable)
     {
       console.log('Cast has loaded.');
       clearInterval(loadCastInterval);
       initializeCastApi();
-    } 
-    else 
+    }
+    else
     {
       console.log('Unavailable');
     }
@@ -22,7 +23,7 @@ $( document ).ready(function(){
 });
 
 
-function initializeCastApi() 
+function initializeCastApi()
 {
   var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
   var sessionRequest = new chrome.cast.SessionRequest(applicationID);
@@ -30,34 +31,34 @@ function initializeCastApi()
   chrome.cast.initialize(apiConfig, onInitSuccess, onInitError);
 }
 
-function sessionListener(e) 
+function sessionListener(e)
 {
   session = e;
   console.log('New session');
-  if (session.media.length !== 0) 
+  if (session.media.length !== 0)
   {
     console.log('Found ' + session.media.length + ' sessions.');
   }
 }
 
 function receiverListener(e) {
-  if( e == 'available' ) 
+  if( e == 'available' )
   {
     console.log("Chromecast was found on the network.");
     launchApp();
   }
-  else 
+  else
   {
     console.log("There are no Chromecasts available.");
   }
 }
 
-function onInitSuccess() 
+function onInitSuccess()
 {
   console.log("Initialization succeeded");
 }
 
-function onInitError() 
+function onInitError()
 {
   console.log("Initialization failed");
 }
@@ -67,12 +68,13 @@ $('#castme').click(function()
   launchApp();
 });
 
+
 $('#pause').click(function()
 {
   if(!session || !currentMediaSession) {
     return;
   }
-  
+
   currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
 });
 
@@ -81,6 +83,8 @@ function pauseSuccess()
   console.log("Pause Success");
   $('#pause').addClass("hidden");
   $('#play').removeClass("hidden");
+  if(timer)
+    clearInterval(timer);
   increment = 0;
 }
 
@@ -89,12 +93,13 @@ function playPauseFailure()
   console.log("Pause Failure");
 }
 
+
 $('#play').click(function()
 {
   if(!session || !currentMediaSession) {
     return;
   }
-  
+
   currentMediaSession.play(null, playSuccess, playPauseFailure);
 });
 
@@ -105,36 +110,38 @@ function playSuccess()
   $('#pause').removeClass("hidden");
   var tt = currentMediaSession.media.duration;
   increment = (1/tt)*100;
+  if(timer)
+    clearInterval(timer);
   updateProgressBar();
 }
 
-function launchApp() 
+function launchApp()
 {
   console.log("Launching the Chromecast App...");
   chrome.cast.requestSession(onRequestSessionSuccess, onLaunchError);
 }
 
-function onRequestSessionSuccess(e) 
+function onRequestSessionSuccess(e)
 {
   console.log("Successfully created session: " + e.sessionId);
   session = e;
 }
 
-function onLaunchError() 
+function onLaunchError()
 {
   console.log("Error connecting to the Chromecast.");
 }
 
-function onRequestSessionSuccess(e) 
+function onRequestSessionSuccess(e)
 {
   console.log("Successfully created session: " + e.sessionId);
   session = e;
   loadMedia();
 }
 
-function loadMedia() 
+function loadMedia()
 {
-  if (!session) 
+  if (!session)
   {
     console.log("No session.");
     return;
@@ -156,13 +163,13 @@ function onLoadSuccess(mediaSession) {
   mediaSession.addUpdateListener(onMediaStatusUpdate);
   var tt = mediaSession.media.duration;
   increment = (1/tt)*100;
-  console.log(increment, mediaSession.media.duration); 
+  console.log(increment, mediaSession.media.duration);
   updateProgressBar();
 }
 
 function updateProgressBar()
 {
-  if(increment == 0)
+  if(increment === 0)
     return;
   document.getElementById('progressBar').style.width= (progress) +'%';
   var timeLeftInSecs = progress/increment;
@@ -180,7 +187,7 @@ function updateProgressBar()
   if(progress < 100 && increment !== 0)
   {
     progress = progress + increment;
-    setTimeout(updateProgressBar,1000);
+    timer = setTimeout(updateProgressBar.bind(this),1000);
   }
 }
 
@@ -212,6 +219,9 @@ function stopApp() {
   session.stop(onStopAppSuccess, onStopAppError);
   progress = 0;
   increment = 0;
+  if(timer)
+    clearInterval(timer);
+  document.getElementById('timeleft').innerHTML = '<br/>';
 }
 
 function onStopAppSuccess() {
@@ -266,4 +276,3 @@ function onSeekError()
 {
   console.log("Seek Failure");
 }
-
