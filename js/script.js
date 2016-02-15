@@ -36,6 +36,11 @@ JustCast.prototype.initializeCastPlayer = function() {
   chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
 };
 
+JustCast.prototype.onError = function()
+{
+  console.log("Chromecast init failed");
+};
+
 JustCast.prototype.sessionListener = function(e)
 {
   this.session = e;
