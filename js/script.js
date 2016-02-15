@@ -124,6 +124,7 @@ JustCast.prototype.playSuccess = function()
   console.log("Play Success");
   $('#play').addClass("hidden");
   $('#pause').removeClass("hidden");
+  this.progress = (this.currentMediaSession.currentTime / this.currentMediaSession.media.duration)*100;
   var tt = this.currentMediaSession.media.duration;
   this.increment = (1/tt)*100;
   if(this.timer)
