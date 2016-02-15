@@ -224,6 +224,8 @@ JustCast.prototype.onMediaStatusUpdate = function(e)
   else
   {
     this.progress = (this.currentMediaSession.currentTime / this.currentMediaSession.media.duration)*100;
+    var tt = this.currentMediaSession.media.duration;
+    this.increment = (1/tt)*100;
     console.log("Updating Media", this.currentMediaSession.currentTime,
                                   this.currentMediaSession.media.duration);
   }
