@@ -176,9 +176,9 @@ JustCast.prototype.loadMedia = function()
 };
 
 JustCast.prototype.onMediaDiscovered = function(how, mediaSession) {
+  this.currentMediaSession = mediaSession;
   if(how == 'loadMedia') {
     console.log('Successfully loaded.');
-    this.currentMediaSession = mediaSession;
   }
   
   if(how == 'activeSession') {
