@@ -1,147 +1,161 @@
-var session = null;
-var increment = 0;
-var progress = 0;
-var currentMediaSession;
-var timer = null;
-
 $( document ).ready(function(){
-  document.getElementById("progress").addEventListener('mouseup', seekMedia);
-  document.getElementById("progress").addEventListener('mousemove', showTime);
-  document.getElementById("progress").addEventListener('mouseout', hideTime);
-  var loadCastInterval = setInterval(function(){
-    if (chrome.cast.isAvailable)
-    {
-      console.log('Cast has loaded.');
-      clearInterval(loadCastInterval);
-      initializeCastApi();
-    }
-    else
-    {
-      console.log('Unavailable');
-    }
-  }, 1000);
+  
 });
 
+var JustCast = function() {
+  this.session = null;
+  this.increment = 0;
+  this.progress = 0;
+  this.currentMediaSession = null;
+  this.timer = null;
+  
+  this.initializeCastPlayer();
+};
 
-function initializeCastApi()
-{
-  var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
-  var sessionRequest = new chrome.cast.SessionRequest(applicationID);
-  var apiConfig = new chrome.cast.ApiConfig(sessionRequest, sessionListener, receiverListener);
-  chrome.cast.initialize(apiConfig, onInitSuccess, onInitError);
-}
-
-function sessionListener(e)
-{
-  session = e;
-  console.log('New session');
-  if (session.media.length !== 0)
-  {
-    console.log('Found ' + session.media.length + ' sessions.');
+JustCast.prototype.initializeCastPlayer = function() {
+  if (!chrome.cast || !chrome.cast.isAvailable) {
+    setTimeout(this.initializeCastPlayer.bind(this), 1000);
+    return;
   }
-}
+  // default set to the default media receiver app ID
+  // optional: you may change it to point to your own
+  var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
 
-function receiverListener(e) {
+  // auto join policy can be one of the following three
+  var autoJoinPolicy = chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
+  //var autoJoinPolicy = chrome.cast.AutoJoinPolicy.PAGE_SCOPED;
+  //var autoJoinPolicy = chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED;
+
+  // request session
+  var sessionRequest = new chrome.cast.SessionRequest(applicationID);
+  var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
+    this.sessionListener.bind(this),
+    this.receiverListener.bind(this),
+    autoJoinPolicy);
+
+  chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
+};
+
+JustCast.prototype.sessionListener = function(e)
+{
+  this.session = e;
+  console.log('New session');
+  if (this.session.media.length !== 0)
+  {
+    console.log('Found ' + this.session.media.length + ' sessions.');
+  }
+};
+
+JustCast.prototype.receiverListener = function(e) {
   if( e == 'available' )
   {
     console.log("Chromecast was found on the network.");
-    launchApp();
+    this.launchApp();
   }
   else
   {
     console.log("There are no Chromecasts available.");
   }
-}
+};
 
-function onInitSuccess()
+JustCast.prototype.onInitSuccess = function()
 {
   console.log("Initialization succeeded");
-}
+};
 
-function onInitError()
+JustCast.prototype.onInitError = function()
 {
   console.log("Initialization failed");
-}
+};
 
-$('#castme').click(function()
+JustCast.prototype.initializeUI = function() {
+  document.getElementById("progress").addEventListener('mouseup', this.seekMedia.bind(this));
+  document.getElementById("progress").addEventListener('mousemove', this.showTime.bind(this));
+  document.getElementById("progress").addEventListener('mouseout', this.hideTime.bind(this));
+  document.getElementById("play").addEventListener('click', this.playMedia.bind(this));
+  document.getElementById("castme").addEventListener('click', this.launchApp.bind(this));
+  document.getElementById("pause").addEventListener('click', this.pauseMedia.bind(this));
+  document.getElementById("stop").addEventListener('click', this.stopApp.bind(this));
+};
+
+JustCast.prototype.pauseMedia = function()
 {
-  launchApp();
-});
-
-
-$('#pause').click(function()
-{
-  if(!session || !currentMediaSession) {
+  if(!this.session || !this.currentMediaSession) {
     return;
   }
 
-  currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
-});
+  this.currentMediaSession.pause(null,
+                                 this.pauseSuccess.bind(this),
+                                 this.playPauseFailure.bind(this));
+};
 
-function pauseSuccess()
+JustCast.prototype.pauseSuccess = function()
 {
   console.log("Pause Success");
   $('#pause').addClass("hidden");
   $('#play').removeClass("hidden");
-  if(timer)
-    clearInterval(timer);
-  increment = 0;
-}
+  if(this.timer)
+    clearInterval(this.timer);
+  this.increment = 0;
+};
 
-function playPauseFailure()
+JustCast.prototype.playPauseFailure = function()
 {
   console.log("Pause Failure");
-}
+};
 
 
-$('#play').click(function()
+JustCast.prototype.playMedia = function()
 {
-  if(!session || !currentMediaSession) {
+  if(!this.session || !this.currentMediaSession) {
     return;
   }
 
-  currentMediaSession.play(null, playSuccess, playPauseFailure);
-});
+  this.currentMediaSession.play(null,
+                                this.playSuccess.bind(this),
+                                this.playPauseFailure.bind(this));
+};
 
-function playSuccess()
+JustCast.prototype.playSuccess = function()
 {
   console.log("Play Success");
   $('#play').addClass("hidden");
   $('#pause').removeClass("hidden");
-  var tt = currentMediaSession.media.duration;
-  increment = (1/tt)*100;
-  if(timer)
-    clearInterval(timer);
-  updateProgressBar();
-}
+  var tt = this.currentMediaSession.media.duration;
+  this.increment = (1/tt)*100;
+  if(this.timer)
+    clearInterval(this.timer);
+  this.updateProgressBar();
+};
 
-function launchApp()
+JustCast.prototype.launchApp = function()
 {
   console.log("Launching the Chromecast App...");
-  chrome.cast.requestSession(onRequestSessionSuccess, onLaunchError);
-}
+  chrome.cast.requestSession(this.onRequestSessionSuccess.bind(this),
+                             this.onLaunchError.bind(this));
+};
 
-function onRequestSessionSuccess(e)
+JustCast.prototype.onRequestSessionSuccess = function(e)
 {
   console.log("Successfully created session: " + e.sessionId);
-  session = e;
-}
+  this.session = e;
+};
 
-function onLaunchError()
+JustCast.prototype.onLaunchError = function()
 {
   console.log("Error connecting to the Chromecast.");
-}
+};
 
-function onRequestSessionSuccess(e)
+JustCast.prototype.onRequestSessionSuccess = function(e)
 {
   console.log("Successfully created session: " + e.sessionId);
-  session = e;
-  loadMedia();
-}
+  this.session = e;
+  this.loadMedia();
+};
 
-function loadMedia()
+JustCast.prototype.loadMedia = function()
 {
-  if (!session)
+  if (!this.session)
   {
     console.log("No session.");
     return;
@@ -153,26 +167,28 @@ function loadMedia()
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
   request.autoplay = true;
 
-  session.loadMedia(request, onLoadSuccess, onLoadError);
-}
+  this.session.loadMedia(request,
+                         this.onLoadSuccess.bind(this),
+                         this.onLoadError.bind(this));
+};
 
-function onLoadSuccess(mediaSession) {
+JustCast.prototype.onLoadSuccess = function(mediaSession) {
   console.log('Successfully loaded.');
-  currentMediaSession = mediaSession;
-  playSuccess();
-  mediaSession.addUpdateListener(onMediaStatusUpdate);
-  var tt = mediaSession.media.duration;
-  increment = (1/tt)*100;
-  console.log(increment, mediaSession.media.duration);
-  updateProgressBar();
-}
+  this.currentMediaSession = mediaSession;
+  this.playSuccess();
+  this.mediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+  var tt = this.mediaSession.media.duration;
+  this.increment = (1/tt)*100;
+  console.log(this.increment, this.mediaSession.media.duration);
+  this.updateProgressBar();
+};
 
-function updateProgressBar()
+JustCast.prototype.updateProgressBar = function()
 {
-  if(increment === 0)
+  if(this.increment === 0)
     return;
-  document.getElementById('progressBar').style.width= (progress) +'%';
-  var timeLeftInSecs = progress/increment;
+  document.getElementById('progressBar').style.width= (this.progress) +'%';
+  var timeLeftInSecs = this.progress/this.increment;
   var hours = Math.floor(timeLeftInSecs / 3600);
   var minutes = Math.floor(timeLeftInSecs / 60);
   var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
@@ -184,65 +200,65 @@ function updateProgressBar()
   {
     document.getElementById('timeleft').innerHTML = '00:00:00.000';
   }
-  if(progress < 100 && increment !== 0)
+  if(this.progress < 100 && this.increment !== 0)
   {
-    progress = progress + increment;
-    timer = setTimeout(updateProgressBar.bind(this),1000);
+    this.progress = this.progress + this.increment;
+    this.timer = setTimeout(this.updateProgressBar.bind(this),1000);
   }
-}
+};
 
 
-function onMediaStatusUpdate(e)
+JustCast.prototype.onMediaStatusUpdate = function(e)
 {
   if(e === false)
   {
-    progress = 0;
-    increment = 0;
+    this.progress = 0;
+    this.increment = 0;
   }
   else
   {
-    progress = (currentMediaSession.currentTime / currentMediaSession.media.duration)*100;
-    console.log("Updating Media", currentMediaSession.currentTime, currentMediaSession.media.duration);
+    this.progress = (this.currentMediaSession.currentTime / this.currentMediaSession.media.duration)*100;
+    console.log("Updating Media", this.currentMediaSession.currentTime,
+                                  this.currentMediaSession.media.duration);
     //updateProgressBar();
   }
-}
+};
 
-function onLoadError() {
+JustCast.prototype.onLoadError = function() {
   console.log('Failed to load.');
-}
+};
 
-$('#stop').click(function(){
-  stopApp();
-});
 
-function stopApp() {
-  session.stop(onStopAppSuccess, onStopAppError);
-  progress = 0;
-  increment = 0;
-  if(timer)
-    clearInterval(timer);
+JustCast.prototype.stopApp = function() {
+  this.session.stop(this.onStopAppSuccess.bind(this), this.onStopAppError.bind(this));
+  this.progress = 0;
+  this.increment = 0;
+  if(this.timer)
+    clearInterval(this.timer);
   document.getElementById('timeleft').innerHTML = '<br/>';
-}
+};
 
-function onStopAppSuccess() {
+JustCast.prototype.onStopAppSuccess = function() {
   console.log('Successfully stopped app.');
-}
+};
 
-function onStopAppError() {
+JustCast.prototype.onStopAppError = function() {
   console.log('Error stopping app.');
-}
+};
 
-function seekMedia(event)
+JustCast.prototype.seekMedia = function(event)
 {
   var pos = parseInt(event.offsetX);
   var total = document.getElementById("progress").clientWidth;
   console.log(pos/total);
   var request = new chrome.cast.media.SeekRequest();
   request.currentTime = (pos/total)*currentMediaSession.media.duration;
-  currentMediaSession.seek(request, onSeekSuccess(request.currentTime), onSeekError);
-}
+  this.currentMediaSession.seek(request,
+                                this.onSeekSuccess.bind(this, request.currentTime),
+                                this.onSeekError.bind(this));
+};
 
-function showTime(event)
+JustCast.prototype.showTime = function(event)
 {
   var x, y;
   if(event.offsetX == x && event.offsetY == y) {
@@ -250,7 +266,7 @@ function showTime(event)
   }
   var pos = parseInt(event.offsetX);
   var total = document.getElementById("progress").clientWidth;
-  var timeLeftInSecs = (pos/total)*currentMediaSession.media.duration;
+  var timeLeftInSecs = (pos/total)*this.currentMediaSession.media.duration;
   var hours = Math.floor(timeLeftInSecs / 3600);
   var minutes = Math.floor(timeLeftInSecs / 60);
   var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
@@ -258,21 +274,21 @@ function showTime(event)
   {
     document.getElementById('hoverTime').innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes<10) ? ('0' + minutes) : minutes) + ':' + ((seconds<10) ? ('0'+seconds.toFixed(3)) : seconds.toFixed(3));
   }
-}
+};
 
-function hideTime(event)
+JustCast.prototype.hideTime = function(event)
 {
   document.getElementById('hoverTime').innerHTML = '<br/>';
-}
+};
 
-function onSeekSuccess(currTime)
+JustCast.prototype.onSeekSuccess = function(currTime)
 {
-  progress = currTime/currentMediaSession.media.duration;
+  this.progress = currTime/this.currentMediaSession.media.duration;
   console.log("Seek success");
-}
+};
 
 
-function onSeekError()
+JustCast.prototype.onSeekError = function()
 {
   console.log("Seek Failure");
-}
+};
