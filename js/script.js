@@ -42,9 +42,10 @@ JustCast.prototype.sessionListener = function(e)
 {
   this.session = e;
   console.log('New session');
-  if (this.session.media.length !== 0)
+  if (this.session.media[0])
   {
     console.log('Found ' + this.session.media.length + ' sessions.');
+    this.onMediaDiscovered('activeSession', this.session.media[0]);
   }
 };
 
@@ -170,15 +171,22 @@ JustCast.prototype.loadMedia = function()
   request.autoplay = true;
 
   this.session.loadMedia(request,
-                         this.onLoadSuccess.bind(this),
+                         this.onMediaDiscovered.bind(this, 'loadMedia'),
                          this.onLoadError.bind(this));
 };
 
-JustCast.prototype.onLoadSuccess = function(mediaSession) {
-  console.log('Successfully loaded.');
-  this.currentMediaSession = mediaSession;
+JustCast.prototype.onMediaDiscovered = function(how, mediaSession) {
+  if(how == 'loadMedia') {
+    console.log('Successfully loaded.');
+    this.currentMediaSession = mediaSession;
+  }
+  
+  if(how == 'activeSession') {
+    console.log("Active session found");
+  }
+  
   this.playSuccess();
-  mediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+  this.currentMediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
 };
 
 JustCast.prototype.updateProgressBar = function()
