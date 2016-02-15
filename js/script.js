@@ -181,7 +181,7 @@ JustCast.prototype.onLoadSuccess = function(mediaSession) {
   console.log('Successfully loaded.');
   this.currentMediaSession = mediaSession;
   this.playSuccess();
-  this.mediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+  mediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
   var tt = this.mediaSession.media.duration;
   this.increment = (1/tt)*100;
   console.log(this.increment, this.mediaSession.media.duration);
