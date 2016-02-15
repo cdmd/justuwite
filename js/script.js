@@ -1,7 +1,3 @@
-$( document ).ready(function(){
-  
-});
-
 var JustCast = function() {
   this.session = null;
   this.increment = 0;
@@ -19,7 +15,7 @@ JustCast.prototype.initializeCastPlayer = function() {
   }
   // default set to the default media receiver app ID
   // optional: you may change it to point to your own
-  var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+  var applicationID = 'C6D5BAED';
 
   // auto join policy can be one of the following three
   var autoJoinPolicy = chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
@@ -29,11 +25,12 @@ JustCast.prototype.initializeCastPlayer = function() {
   // request session
   var sessionRequest = new chrome.cast.SessionRequest(applicationID);
   var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
-    this.sessionListener.bind(this),
-    this.receiverListener.bind(this),
-    autoJoinPolicy);
+                                            this.sessionListener.bind(this),
+                                            this.receiverListener.bind(this),
+                                            autoJoinPolicy);
 
   chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
+  this.initializeUI();
 };
 
 JustCast.prototype.onError = function()
@@ -182,10 +179,6 @@ JustCast.prototype.onLoadSuccess = function(mediaSession) {
   this.currentMediaSession = mediaSession;
   this.playSuccess();
   mediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
-  var tt = this.mediaSession.media.duration;
-  this.increment = (1/tt)*100;
-  console.log(this.increment, this.mediaSession.media.duration);
-  this.updateProgressBar();
 };
 
 JustCast.prototype.updateProgressBar = function()
@@ -225,7 +218,6 @@ JustCast.prototype.onMediaStatusUpdate = function(e)
     this.progress = (this.currentMediaSession.currentTime / this.currentMediaSession.media.duration)*100;
     console.log("Updating Media", this.currentMediaSession.currentTime,
                                   this.currentMediaSession.media.duration);
-    //updateProgressBar();
   }
 };
 
