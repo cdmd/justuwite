@@ -260,7 +260,7 @@ JustCast.prototype.seekMedia = function(event)
   var total = document.getElementById("progress").clientWidth;
   console.log(pos/total);
   var request = new chrome.cast.media.SeekRequest();
-  request.currentTime = (pos/total)*currentMediaSession.media.duration;
+  request.currentTime = (pos/total)*this.currentMediaSession.media.duration;
   this.currentMediaSession.seek(request,
                                 this.onSeekSuccess.bind(this, request.currentTime),
                                 this.onSeekError.bind(this));
